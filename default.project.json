@@ -2,6 +2,9 @@
   "name": "ido-roblox-code",
   "tree": {
     "$className": "Folder",
+    "WorldServer": {"$path": "src/World.server.luau"},
+    "FlightClient": {"$path": "src/Flight.client.luau"},
+    "FlightRules": {"$path": "src/Rules.luau"},
     "script_001": {
       "$path": "src/script_001.luau"
     },

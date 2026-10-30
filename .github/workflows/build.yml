@@ -29,6 +29,8 @@ jobs:
         run: test -f scripts-map.json || tools/lune run scripts/extract.luau
       - name: Build code using Rojo
         run: tools/rojo build default.project.json -o build/code.rbxm
+      - name: Test gameplay progression and theft rules
+        run: tools/lune run tests/rules.luau
       - name: Compile and verify preserved place
         run: tools/lune run scripts/build.luau
       - name: Compare all properties and references

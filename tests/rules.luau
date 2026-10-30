@@ -1,0 +1,17 @@
+local Rules = require('../src/Rules')
+assert(Rules.speed(25,0,false) > Rules.speed(1,0,false))
+assert(Rules.ceiling(25) > Rules.ceiling(1))
+assert(Rules.speed(10,0,true) < Rules.speed(10,0,false))
+assert(Rules.tier(2) == 0 and Rules.tier(3) == 1 and Rules.tier(100) == 3)
+assert(not Rules.canSteal(1,10,false,true,3), 'Locked tree was stealable')
+assert(not Rules.canSteal(100,1,true,true,3), 'Double carry allowed')
+assert(not Rules.canSteal(100,1,false,false,3), 'Unavailable block allowed')
+assert(not Rules.canSteal(100,1,false,true,30), 'Remote theft allowed')
+assert(Rules.canSteal(10,10,false,true,15))
+for _, tree in Rules.TREES do
+ assert(Rules.ceiling(tree.required) > tree.height + 10, 'Tree unreachable at unlock level')
+ assert(Rules.speed(tree.required,0,true) > tree.speed, 'Monster cannot be escaped')
+ local p,c,d = Rules.reward(tree,199,0,0)
+ assert(p == 200 and c == tree.coins and d == 1)
+end
+print('Gameplay rules passed: movement progression, reachable trees, theft guards and rewards')
