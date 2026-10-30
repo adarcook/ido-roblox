@@ -1,0 +1,5 @@
+/tools/
+/build/
+*.zip
+.env*
+original/inspection.rbxlx
