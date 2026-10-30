@@ -23,6 +23,20 @@ def canonical(path):
 for left, right in [('before', 'after'), ('original', 'source-reset')]:
     a, b = canonical(f'build/{left}.rbxlx'), canonical(f'build/{right}.rbxlx')
     if a != b:
+        def difference(x, y, path='root'):
+            if type(x) != type(y) or not isinstance(x, tuple):
+                if x != y:
+                    print('Difference at', path, repr(x)[:300], repr(y)[:300])
+                    return True
+                return False
+            if len(x) != len(y):
+                print('Length difference at', path, len(x), len(y))
+                return True
+            for i, (xx, yy) in enumerate(zip(x, y)):
+                if xx != yy and difference(xx, yy, path + '/' + str(i)):
+                    return True
+            return False
+        difference(a, b)
         Path('build/difference.txt').write_text(f'{left}: {a!r}\n{right}: {b!r}')
         raise AssertionError(f'Property/reference difference: {left} vs {right}')
 print('All instances, properties, and references preserved')
