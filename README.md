@@ -1,5 +1,14 @@
 # Ido Roblox
 
+## כניסה למשחק ובדיקת עדכונים
+
+- [פתיחת Ido Playtest ב־Roblox](https://www.roblox.com/games/117297879536602/)
+- [מצב הבנייה וההעלאה](https://github.com/adarcook/ido-roblox/actions/workflows/build.yml): יש להמתין להצלחה גם בשלב `build` וגם בשלב `publish`.
+- לאחר עדכון, צאו מהמשחק והיכנסו מחדש. שרת קיים עשוי להמשיך עם גרסה ישנה.
+- אם אין גישה בטאבלט, צריך להעניק לחשבון של עידו גישה לסביבת הניסוי ב־Roblox.
+- המפתח הסודי נשמר רק בהגדרות GitHub. אין להדביק אותו בקבצים או בצ׳אט.
+
+
 Migration of the existing game, not a replacement game.
 
 The untouched backup is `original/ido-roblox-backup.rbxl` (SHA256 `94795779A55A0B684AB9C98D877455608CF6BA9CAE1B458C52E8DC21BB43C57B`). Never overwrite it. External meshes, audio, textures and animations remain references to Roblox assets; this backup cannot transfer asset ownership or grant permissions.
