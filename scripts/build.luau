@@ -31,5 +31,18 @@ for _, entry in entries do
 end
 fs.writeFile('build/original.rbxlx', originalXml)
 fs.writeFile('build/source-reset.rbxlx', roblox.serializePlace(game, true))
-fs.writeFile('build/playtest.rbxl', output)
+-- Add new systems only after verifying the untouched original hierarchy.
+local function inject(name, className, parent)
+ local source = code:FindFirstChild(name).Source
+ luau.compile(source)
+ local object = roblox.Instance.new(className)
+ object.Name, object.Source, object.Parent = name, source, parent
+end
+inject('FlightRules', 'ModuleScript', restored:GetService('ReplicatedStorage'))
+inject('WorldServer', 'Script', restored:GetService('ServerScriptService'))
+inject('FlightClient', 'LocalScript', restored:GetService('StarterPlayer'):FindFirstChild('StarterPlayerScripts'))
+assert(restored:GetService('ReplicatedStorage'):FindFirstChild('FlightRules'))
+assert(restored:GetService('ServerScriptService'):FindFirstChild('WorldServer'))
+assert(restored:GetService('StarterPlayer'):FindFirstChild('StarterPlayerScripts'):FindFirstChild('FlightClient'))
+fs.writeFile('build/playtest.rbxl', roblox.serializePlace(restored))
 print('Built and roundtrip-verified', #entries, 'scripts;', #game:GetDescendants(), 'instances')

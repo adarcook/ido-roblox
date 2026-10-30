@@ -29,6 +29,8 @@ jobs:
         run: test -f scripts-map.json || tools/lune run scripts/extract.luau
       - name: Build code using Rojo
         run: tools/rojo build default.project.json -o build/code.rbxm
+      - name: Test gameplay progression and theft rules
+        run: tools/lune run tests/rules.luau
       - name: Compile and verify preserved place
         run: tools/lune run scripts/build.luau
       - name: Compare all properties and references
@@ -68,5 +70,4 @@ jobs:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_PLAYTEST_API_KEY }}
           PLAYTEST_UNIVERSE_ID: ${{ vars.PLAYTEST_UNIVERSE_ID }}
           PLAYTEST_PLACE_ID: ${{ vars.PLAYTEST_PLACE_ID }}
-          PRODUCTION_UNIVERSE_ID: ${{ vars.PRODUCTION_UNIVERSE_ID }}
         run: python3 scripts/publish.py artifact/build/playtest.rbxl

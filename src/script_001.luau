@@ -1,3 +1,6 @@
+-- Theft is now managed centrally with reset, monster chase and base rewards.
+-- Original script and complete model remain in original/ido-roblox-backup.rbxl.
+do return end
 local luckyBlock = script.Parent
 local mainBlock = luckyBlock:WaitForChild("MainBlock")
 local prompt = mainBlock:WaitForChild("ProximityPrompt")
