@@ -1,0 +1,12 @@
+{
+  "name": "ido-roblox-code",
+  "tree": {
+    "$className": "Folder",
+    "script_001": {
+      "$path": "src/script_001.luau"
+    },
+    "script_002": {
+      "$path": "src/script_002.luau"
+    }
+  }
+}

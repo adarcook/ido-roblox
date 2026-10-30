@@ -1,0 +1,24 @@
+[
+  {
+    "class": "Script",
+    "file": "src/script_001.luau",
+    "id": "script_001",
+    "name": "Workspace.LuckyBlock.StealScript",
+    "route": [
+      1,
+      4,
+      2
+    ]
+  },
+  {
+    "class": "Script",
+    "file": "src/script_002.luau",
+    "id": "script_002",
+    "name": "Workspace.LuckyBlock.WingAnimation",
+    "route": [
+      1,
+      4,
+      5
+    ]
+  }
+]
