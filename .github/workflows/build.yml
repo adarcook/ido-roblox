@@ -31,6 +31,8 @@ jobs:
         run: tools/rojo build default.project.json -o build/code.rbxm
       - name: Compile and verify preserved place
         run: tools/lune run scripts/build.luau
+      - name: Compare all properties and references
+        run: python3 scripts/verify.py
       - uses: actions/upload-artifact@v4
         with:
           name: playtest-and-source
