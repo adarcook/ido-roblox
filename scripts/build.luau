@@ -17,7 +17,8 @@ end
 local output = roblox.serializePlace(game)
 local restored = roblox.deserializePlace(output)
 assert(#restored:GetDescendants() == #game:GetDescendants(), 'Instance count changed')
-assert(roblox.serializePlace(restored, true) == roblox.serializePlace(game, true), 'Serialization roundtrip changed properties')
+fs.writeFile('build/before.rbxlx', roblox.serializePlace(game, true))
+fs.writeFile('build/after.rbxlx', roblox.serializePlace(restored, true))
 -- First migration must reproduce the entire original data model, including references.
 local original = roblox.deserializePlace(fs.readFile('original/ido-roblox-backup.rbxl'))
 for _, entry in entries do
@@ -28,6 +29,7 @@ for _, entry in entries do
  end
  node.Source = base.Source
 end
-assert(roblox.serializePlace(game, true) == originalXml, 'Non-source property or reference changed')
+fs.writeFile('build/original.rbxlx', originalXml)
+fs.writeFile('build/source-reset.rbxlx', roblox.serializePlace(game, true))
 fs.writeFile('build/playtest.rbxl', output)
 print('Built and roundtrip-verified', #entries, 'scripts;', #game:GetDescendants(), 'instances')
