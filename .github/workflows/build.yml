@@ -1,0 +1,58 @@
+name: Build and Playtest
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: playtest-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned tools
+        shell: bash
+        run: |
+          mkdir -p tools build
+          curl -fsSL https://github.com/lune-org/lune/releases/download/v0.11.1/lune-0.11.1-linux-x86_64.zip -o /tmp/lune.zip
+          unzip -o /tmp/lune.zip -d tools
+          curl -fsSL https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip -o /tmp/rojo.zip
+          unzip -o /tmp/rojo.zip -d tools
+          chmod +x tools/lune tools/rojo
+      - name: Extract initial source when absent
+        run: test -f scripts-map.json || tools/lune run scripts/extract.luau
+      - name: Build code using Rojo
+        run: tools/rojo build default.project.json -o build/code.rbxm
+      - name: Compile and verify preserved place
+        run: tools/lune run scripts/build.luau
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playtest-and-source
+          path: |
+            build/playtest.rbxl
+            src/
+            scripts-map.json
+            inventory.json
+            default.project.json
+  publish:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PLAYTEST_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: playtest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: playtest-and-source
+          path: artifact
+      - name: Publish only to dedicated Playtest universe
+        env:
+          ROBLOX_API_KEY: ${{ secrets.ROBLOX_PLAYTEST_API_KEY }}
+          PLAYTEST_UNIVERSE_ID: ${{ vars.PLAYTEST_UNIVERSE_ID }}
+          PLAYTEST_PLACE_ID: ${{ vars.PLAYTEST_PLACE_ID }}
+          PRODUCTION_UNIVERSE_ID: ${{ vars.PRODUCTION_UNIVERSE_ID }}
+        run: python3 scripts/publish.py artifact/build/playtest.rbxl
