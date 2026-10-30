@@ -1,6 +1,7 @@
 local fs = require('@lune/fs')
 local roblox = require('@lune/roblox')
 local serde = require('@lune/serde')
+if not fs.isDir('src') then fs.writeDir('src') end
 local game = roblox.deserializePlace(fs.readFile('original/ido-roblox-backup.rbxl'))
 local entries, classes, assets = {}, {}, {}
 local tree = {['$className']='Folder'}
