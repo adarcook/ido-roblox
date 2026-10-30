@@ -7,9 +7,8 @@ from pathlib import Path
 
 universe = os.environ['PLAYTEST_UNIVERSE_ID']
 place = os.environ['PLAYTEST_PLACE_ID']
-production = os.environ['PRODUCTION_UNIVERSE_ID']
-assert all(value.isdecimal() and int(value) > 0 for value in (universe, place, production)), 'Configure all Roblox IDs'
-assert universe != production, 'Playtest must use a separate universe'
+if (universe, place) != ('10773779271', '117297879536602'):
+    sys.exit('Publication blocked: target must match the approved Ido Playtest experience and place')
 key = os.environ['ROBLOX_API_KEY']
 assert key, 'Missing Playtest credential'
 url = f'https://apis.roblox.com/universes/v1/{universe}/places/{place}/versions?versionType=Published'
