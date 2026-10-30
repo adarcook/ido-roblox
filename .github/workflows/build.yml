@@ -12,6 +12,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned tools
@@ -38,6 +40,16 @@ jobs:
             scripts-map.json
             inventory.json
             default.project.json
+      - name: Save initial extracted source in Git
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          git add src scripts-map.json inventory.json default.project.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Extract existing Luau sources and preservation inventory'
+            git push
+          fi
   publish:
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PLAYTEST_ENABLED == 'true'
