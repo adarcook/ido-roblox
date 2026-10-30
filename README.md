@@ -14,11 +14,11 @@ CI compiles Luau, verifies instance counts and full serialization roundtrip, and
 
 ## One-time Playtest setup
 
-1. In Roblox Studio, create and publish a **separate experience** named Ido Playtest. Record its Universe ID and starting Place ID. Record the production Universe ID for the safety check. Do not point Playtest at another place in the production universe: a separate universe also isolates DataStores.
+1. In Roblox Studio, create and publish a **separate experience** named Ido Playtest. Record its Universe ID and starting Place ID. Publishing is restricted in code to Universe `10773779271` and Place `117297879536602`. Do not point Playtest at another place in the production universe: a separate universe also isolates DataStores.
 2. Grant Ido's Roblox account Playtest access to the private experience and enable tablet/mobile devices. Review account and experience eligibility restrictions in Creator Dashboard. Test access in the tablet Roblox app.
 3. Check animation, mesh, image and audio permissions for the new experience. Grant access or republish under the correct owner where necessary. Stored IDs alone do not guarantee playback.
 4. Create an Open Cloud API key with `universe-places` Write permission **only for the Playtest experience**. Choose expiry and network restrictions compatible with the runner. Never paste the key in chat or Git.
-5. In GitHub Settings → Environments create `playtest`. Add secret `ROBLOX_PLAYTEST_API_KEY`. Add variables `PLAYTEST_UNIVERSE_ID`, `PLAYTEST_PLACE_ID`, `PRODUCTION_UNIVERSE_ID`. Add repository variable `PLAYTEST_ENABLED=true` only after confirming those IDs and permissions.
+5. In GitHub Settings → Environments create `playtest`. Add secret `ROBLOX_PLAYTEST_API_KEY`. Add variables `PLAYTEST_UNIVERSE_ID`, `PLAYTEST_PLACE_ID`. Add repository variable `PLAYTEST_ENABLED=true` only after confirming those IDs and permissions.
 6. Push/merge to main (or run the workflow manually). Successful builds then publish to Playtest. Open the experience link on the tablet and join a new session for the new version. Existing servers may keep an earlier version.
 
 No production deployment workflow exists. Keep PR review enabled; future production publishing requires explicit approval and separate credentials. To roll back Playtest, revert the code commit and rerun, or use Roblox version history.
