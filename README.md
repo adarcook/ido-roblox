@@ -1,5 +1,22 @@
 # Ido Roblox
 
+## תוכנית המשחק והגרסה החדשה
+
+- [תוכנית העבודה המלאה — כל שמונת המפגשים](docs/ROADMAP.md)
+- [איך משחקים ומה לבדוק עם עידו](docs/PLAYTEST.md)
+- גרסת `Flight Forest 0.2`: טיסה לטאבלט, אימון רוח וחישוקים, כוח נשמר, ארבעה עצים, גניבה ומרדף, בסיס ופרסים.
+- קובץ `AGENTS.md` מפנה את המשך העבודה לתוכנית השמורה, כדי שלא יהיה צורך לחפש בשיחות קודמות.
+
+
+## כניסה למשחק ובדיקת עדכונים
+
+- [פתיחת Ido Playtest ב־Roblox](https://www.roblox.com/games/117297879536602/)
+- [מצב הבנייה וההעלאה](https://github.com/adarcook/ido-roblox/actions/workflows/build.yml): יש להמתין להצלחה גם בשלב `build` וגם בשלב `publish`.
+- לאחר עדכון, צאו מהמשחק והיכנסו מחדש. שרת קיים עשוי להמשיך עם גרסה ישנה.
+- אם אין גישה בטאבלט, צריך להעניק לחשבון של עידו גישה לסביבת הניסוי ב־Roblox.
+- המפתח הסודי נשמר רק בהגדרות GitHub. אין להדביק אותו בקבצים או בצ׳אט.
+
+
 Migration of the existing game, not a replacement game.
 
 The untouched backup is `original/ido-roblox-backup.rbxl` (SHA256 `94795779A55A0B684AB9C98D877455608CF6BA9CAE1B458C52E8DC21BB43C57B`). Never overwrite it. External meshes, audio, textures and animations remain references to Roblox assets; this backup cannot transfer asset ownership or grant permissions.
@@ -14,11 +31,11 @@ CI compiles Luau, verifies instance counts and full serialization roundtrip, and
 
 ## One-time Playtest setup
 
-1. In Roblox Studio, create and publish a **separate experience** named Ido Playtest. Record its Universe ID and starting Place ID. Record the production Universe ID for the safety check. Do not point Playtest at another place in the production universe: a separate universe also isolates DataStores.
+1. In Roblox Studio, create and publish a **separate experience** named Ido Playtest. Record its Universe ID and starting Place ID. Publishing is restricted in code to Universe `10773779271` and Place `117297879536602`. Do not point Playtest at another place in the production universe: a separate universe also isolates DataStores.
 2. Grant Ido's Roblox account Playtest access to the private experience and enable tablet/mobile devices. Review account and experience eligibility restrictions in Creator Dashboard. Test access in the tablet Roblox app.
 3. Check animation, mesh, image and audio permissions for the new experience. Grant access or republish under the correct owner where necessary. Stored IDs alone do not guarantee playback.
 4. Create an Open Cloud API key with `universe-places` Write permission **only for the Playtest experience**. Choose expiry and network restrictions compatible with the runner. Never paste the key in chat or Git.
-5. In GitHub Settings → Environments create `playtest`. Add secret `ROBLOX_PLAYTEST_API_KEY`. Add variables `PLAYTEST_UNIVERSE_ID`, `PLAYTEST_PLACE_ID`, `PRODUCTION_UNIVERSE_ID`. Add repository variable `PLAYTEST_ENABLED=true` only after confirming those IDs and permissions.
+5. In GitHub Settings → Environments create `playtest`. Add secret `ROBLOX_PLAYTEST_API_KEY`. Add variables `PLAYTEST_UNIVERSE_ID`, `PLAYTEST_PLACE_ID`. Add repository variable `PLAYTEST_ENABLED=true` only after confirming those IDs and permissions.
 6. Push/merge to main (or run the workflow manually). Successful builds then publish to Playtest. Open the experience link on the tablet and join a new session for the new version. Existing servers may keep an earlier version.
 
 No production deployment workflow exists. Keep PR review enabled; future production publishing requires explicit approval and separate credentials. To roll back Playtest, revert the code commit and rerun, or use Roblox version history.
