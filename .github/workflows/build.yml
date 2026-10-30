@@ -68,5 +68,4 @@ jobs:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_PLAYTEST_API_KEY }}
           PLAYTEST_UNIVERSE_ID: ${{ vars.PLAYTEST_UNIVERSE_ID }}
           PLAYTEST_PLACE_ID: ${{ vars.PLAYTEST_PLACE_ID }}
-          PRODUCTION_UNIVERSE_ID: ${{ vars.PRODUCTION_UNIVERSE_ID }}
         run: python3 scripts/publish.py artifact/build/playtest.rbxl
