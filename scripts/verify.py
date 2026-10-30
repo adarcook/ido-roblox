@@ -10,6 +10,12 @@ def canonical(path):
         if 'referent' in attrs:
             attrs['referent'] = refs[attrs['referent']]
         text = node.text or ''
+        numeric = node.tag in {'float', 'double', 'X', 'Y', 'Z', 'R', 'G', 'B', 'Scale', 'Offset'} or (node.tag.startswith('R') and node.tag[1:].isdigit())
+        if numeric and not len(node):
+            try:
+                text = str(round(float(text), 6))
+            except ValueError:
+                pass
         if node.tag == 'Ref':
             text = refs.get(text, text)
         children = [visit(child) for child in node]
