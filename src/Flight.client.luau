@@ -38,7 +38,7 @@ panel.BackgroundColor3=Color3.fromRGB(17,43,39)
 panel.BackgroundTransparency=0.12
 panel.Parent=gui
 rounded(panel)
-local title=text(panel,'FLIGHT FOREST · 0.2',18)
+local title=text(panel,Rules.VERSION,16)
 title.Position,title.Size=UDim2.fromOffset(10,8),UDim2.new(1,-20,0,24)
 local stats=text(panel,'Loading your wings...',17)
 stats.Position,stats.Size=UDim2.fromOffset(10,36),UDim2.new(1,-20,0,48)
@@ -46,13 +46,19 @@ local status=text(panel,'',13)
 status.Position,status.Size=UDim2.fromOffset(10,87),UDim2.new(1,-20,0,32)
 local quest=text(gui,'',17)
 quest.AnchorPoint=Vector2.new(0.5,0)
-quest.Position,quest.Size=UDim2.new(0.5,0,0,155),UDim2.new(0.85,0,0,46)
+quest.Position,quest.Size=UDim2.new(0.5,0,0,150),UDim2.new(0.75,0,0,80)
 quest.BackgroundTransparency=0.18
 quest.BackgroundColor3=Color3.fromRGB(26,45,48)
 rounded(quest)
+local carryingBadge=text(gui,'',16)
+carryingBadge.AnchorPoint=Vector2.new(0.5,0)
+carryingBadge.Position,carryingBadge.Size=UDim2.new(0.5,0,0,234),UDim2.new(0.65,0,0,32)
+carryingBadge.BackgroundColor3=Color3.fromRGB(128,92,24)
+carryingBadge.BackgroundTransparency=0.1
+rounded(carryingBadge)
 local toast=text(gui,'',18)
 toast.AnchorPoint=Vector2.new(0.5,0)
-toast.Position,toast.Size=UDim2.new(0.5,0,0,208),UDim2.new(0.85,0,0,60)
+toast.Position,toast.Size=UDim2.new(0.5,0,0,272),UDim2.new(0.85,0,0,60)
 toast.BackgroundColor3=Color3.fromRGB(37,83,71)
 toast.BackgroundTransparency=0.1
 toast.Visible=false
@@ -83,12 +89,15 @@ local down=button('▼ DOWN / ירידה',-218,Color3.fromRGB(47,132,156))
 local fly=button('לעוף / F',-152,Color3.fromRGB(42,158,109))
 local home=button('לבסיס',-86,Color3.fromRGB(92,91,128))
 home.Size=UDim2.fromOffset(106,46)
+local drop=button('הנח / DROP',-20,Color3.fromRGB(165,109,48))
+drop.Size=UDim2.fromOffset(106,46)
+drop.Activated:Connect(function() action:FireServer('drop') end)
 local homeConfirmUntil=0
 fly.Activated:Connect(function() action:FireServer('toggle') end)
 home.Activated:Connect(function()
  if (player:GetAttribute('Carrying') or '')~='' and os.clock()>homeConfirmUntil then
   homeConfirmUntil=os.clock()+3
-  home.Text='ביטול נשיאה?'
+  home.Text='להניח ולחזור?'
   task.delay(3,function() home.Text='לבסיס' end)
   return
  end
@@ -110,6 +119,7 @@ local keys={}
 UserInputService.InputBegan:Connect(function(input,processed)
  if processed or UserInputService:GetFocusedTextBox() then return end
  keys[input.KeyCode]=true
+ if input.KeyCode==Enum.KeyCode.R then action:FireServer('drop') end
  if input.KeyCode==Enum.KeyCode.F then action:FireServer('toggle') end
 end)
 UserInputService.InputEnded:Connect(function(input) keys[input.KeyCode]=nil end)
@@ -118,34 +128,63 @@ local function clear()
 end
 UserInputService.WindowFocusReleased:Connect(clear)
 player.CharacterAdded:Connect(clear)
+local tutorialText={
+ '1/5 · ברוכים הבאים! המטרה: לאסוף בלוקים לבסיס. לחץ לעוף ורחף ברוח הכחולה ליד הבית עד שתקבל כוח — האימון מוסיף מהירות בלבד.',
+ '2/5 · עכשיו עוף החוצה מהרוח: הג׳ויסטיק מזיז, עלייה וירידה משנים גובה. אין מגבלת גובה לפי כוח!',
+ '3/5 · עוף לאזור הדשא הירוק, אל אחד משלושת הבלוקים שעל העמודים. התקרב והחזק Steal Lucky Block.',
+ '4/5 · הבלוק בידיים שלך! עוף בחזרה לכיוון הבית וצא מהביומה. השומר יכול לתפוס אותך רק באזור שלו. אפשר להניח עם DROP.',
+ '5/5 · ברחתי! עכשיו הבא את הבלוק לבסיס עם השם שלך, ליד האור הירוק. הבלוק יופיע באוסף ותקבל גם פרס.',
+}
 local function refresh()
  local power=player:GetAttribute('FlightPower') or 1
  local coins=player:GetAttribute('Coins') or 0
  local delivered=player:GetAttribute('Deliveries') or 0
- stats.Text='Flight Power '..power..'  |  Coins '..coins..'\nWings '..Rules.tier(delivered)..'  |  Blocks '..delivered
+ stats.Text='Flight Power '..power..'  |  Coins '..coins..'\nWings '..Rules.tier(delivered)..'  |  Blocks '..(player:GetAttribute('CollectionCount') or 0)
  local carrying=player:GetAttribute('Carrying') or ''
- if carrying~='' then
-  quest.Text='המפלצת בעקבותיך! החזר את הבלוק לקרן האור הירוקה בבסיס'
+ carryingBadge.Visible=carrying~=''
+ carryingBadge.Text='נושא בלוק '..carrying..' | DROP מניח, הבסיס שומר'
+ local step=player:GetAttribute('TutorialStep') or 1
+ if tutorialText[step] then
+  quest.Text=tutorialText[step]
+ elseif carrying~='' then
+  quest.Text='נושא '..carrying..' — הבא לבסיס עם השם שלך! השומר נשאר בביומה שלו'
  elseif player:GetAttribute('Training') then
   quest.Text='אימון פעיל! הישאר ברוח הכחולה כדי לצבור כוח טיסה'
  elseif power<10 then
-  quest.Text='לחץ לעוף • עלה ברוח הכחולה • חפש בלוק בעץ הנמוך'
+  quest.Text='רחף ברוח הכחולה למהירות • עוף לאחד הבלוקים בביומות'
  else
   quest.Text='אימון ← טיסה ← גניבת בלוק ← בריחה מהמפלצת ← פרס בבסיס'
  end
  fly.Text=if player:GetAttribute('Flying') then 'לנחות / F' else 'לעוף / F'
 end
-for _,name in {'FlightPower','Coins','Deliveries','Carrying','Training','Flying'} do
+for _,name in {'FlightPower','Coins','Deliveries','Carrying','Training','Flying','TutorialStep','CollectionCount'} do
  player:GetAttributeChangedSignal(name):Connect(refresh)
 end
 refresh()
-local sendTimer,hudTimer=0,0
+local sendTimer,hudTimer,wingPhase=0,0,0
 RunService.RenderStepped:Connect(function(dt)
  sendTimer+=dt
  hudTimer+=dt
  local character=player.Character
  local humanoid=character and character:FindFirstChildOfClass('Humanoid')
  local root=character and character:FindFirstChild('HumanoidRootPart')
+ -- Animate all visible players locally; Motor C0 preserves the feather shape.
+ wingPhase+=dt
+ for _,other in Players:GetPlayers() do
+  local c=other.Character
+  local r=c and c:FindFirstChild('HumanoidRootPart')
+  local wings=c and c:FindFirstChild('FlightWings')
+  if r and wings then
+   local speed=r.AssemblyLinearVelocity.Magnitude
+   local flying=other:GetAttribute('Flying')
+   local amount=if flying then 0.15+math.clamp(speed/160,0,0.5) else 0.035
+   for _,motor in wings:GetDescendants() do
+    if motor:IsA('Motor6D') and motor.Name=='FlightFeatherMotor' then
+     motor.C0=motor:GetAttribute('RestC0')*CFrame.Angles(0,0,math.sin(wingPhase*(if flying then 5+math.min(speed/10,8) else 2)) *amount*motor:GetAttribute('Side'))
+    end
+   end
+  end
+ end
  if sendTimer>=0.065 and humanoid and root and player:GetAttribute('Flying') then
   sendTimer=0
   local direction=humanoid.MoveDirection
@@ -166,6 +205,6 @@ RunService.RenderStepped:Connect(function(dt)
  if hudTimer>=0.25 then
   hudTimer=0
   local altitude=if root then math.floor(root.Position.Y) else 0
-  status.Text='Speed '..(player:GetAttribute('FlightSpeed') or 0)..' | Height '..altitude..' / '..(player:GetAttribute('MaxAltitude') or 83)..'\n'..(player:GetAttribute('SaveStatus') or 'Loading')
+  status.Text='Speed '..(player:GetAttribute('FlightSpeed') or 0)..' | Height '..altitude..' (free)'..'\n'..(player:GetAttribute('SaveStatus') or 'Loading')
  end
 end)

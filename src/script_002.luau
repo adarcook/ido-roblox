@@ -16,12 +16,14 @@ local SPEED = 3.6
 local t = 0
 
 RunService.Heartbeat:Connect(function(dt)
-	t += dt
+	local speed=mainBlock.AssemblyLinearVelocity.Magnitude
+ local rate=3.6+math.clamp(speed/12,0,7)
+ t += dt*rate/SPEED
 
 	local mainWave = math.sin(t * SPEED)
 	local softWave = math.sin(t * SPEED * 2 + 0.4) * 1.3
 
-	local angle = BASE_ANGLE + mainWave * FLAP_AMOUNT + softWave
+	local angle = BASE_ANGLE + mainWave * (FLAP_AMOUNT+math.clamp(mainBlock.AssemblyLinearVelocity.Magnitude/6,0,14)) + softWave
 
 	leftMotor.C0 =
 		leftPosition
