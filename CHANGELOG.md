@@ -1,3 +1,11 @@
+# v8 — Wings & Base (2026-10-31)
+
+- Feather wing pictogram drawn with UI shapes; animated blue flight state and landing arrow.
+- Five starting physical slots; hard deposit/reward limit, collection colors and faces preserved. +5 slots per upgrade at 100 × 2^level Coins, seven upgrades to 40 slots.
+- Atomic DataStore purchase checks balance and expected level; saves base level and debits Coins together. Legacy collections receive enough capacity without losing blocks.
+- Seven action-gated tutorial steps: toggle, actual ascent, training, approach, hold-to-steal, territorial escape, delivery. Pulse only the relevant control; completed legacy tutorials stay complete.
+- Rules/build/compile/original graph preservation verified; actual tablet play pending Ido.
+
 # v7 — Visual Flight · 31 באוקטובר 2026
 
 - הדרכה ללא פסקאות: חץ נע, outline פועם ונקודות התקדמות; פקדים ופעולות בלוק בסמלים.

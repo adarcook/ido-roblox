@@ -75,7 +75,43 @@ local function button(caption,offsetY,color)
 end
 local up=button('▲',-284,Color3.fromRGB(47,132,156))
 local down=button('▼',-218,Color3.fromRGB(47,132,156))
-local fly=button('↗',-152,Color3.fromRGB(42,158,109))
+local fly=button('',-152,Color3.fromRGB(42,158,109))
+-- Draw feather wings from UI shapes, independent of emoji/font availability.
+local feathers={}
+for _,side in {-1,1} do
+ for i=1,4 do
+  local f=Instance.new('Frame')
+  f.AnchorPoint=Vector2.new(0.5,0.5)
+  f.Size=UDim2.fromOffset(9,30-i*3)
+  f.Position=UDim2.new(0.5,side*(8+i*7),0.5,4-i*3)
+  f.Rotation=side*(25+i*9)
+  f.BackgroundColor3=Color3.new(1,1,1)
+  f.BorderSizePixel=0
+  f.Parent=fly
+  local corner=Instance.new('UICorner'); corner.CornerRadius=UDim.new(1,0); corner.Parent=f
+  table.insert(feathers,{frame=f,side=side,index=i})
+ end
+end
+local landing=text(fly,'↓',23)
+landing.Size=UDim2.fromOffset(24,32); landing.Position=UDim2.new(0.5,-12,0.5,-16)
+local upgrade=button('+5 ●',-86,Color3.fromRGB(170,126,35))
+upgrade.TextSize=20
+upgrade.Activated:Connect(function() action:FireServer('upgrade') end)
+local stealButton=button('⬡',-350,Color3.fromRGB(180,143,34))
+stealButton.Visible=false
+local selectedPrompt=nil
+local promptHolding=false
+stealButton.InputBegan:Connect(function(input)
+ if selectedPrompt and (input.UserInputType==Enum.UserInputType.Touch or input.UserInputType==Enum.UserInputType.MouseButton1) then
+  promptHolding=true; selectedPrompt:InputHoldBegin()
+ end
+end)
+UserInputService.InputEnded:Connect(function(input)
+ if promptHolding and (input.UserInputType==Enum.UserInputType.Touch or input.UserInputType==Enum.UserInputType.MouseButton1) then
+  promptHolding=false
+  if selectedPrompt then selectedPrompt:InputHoldEnd() end
+ end
+end)
 local drop=button('⬡ ↓',-20,Color3.fromRGB(165,109,48))
 drop.Activated:Connect(function() action:FireServer('drop') end)
 fly.Activated:Connect(function() action:FireServer('toggle') end)
@@ -105,28 +141,32 @@ UserInputService.WindowFocusReleased:Connect(clear)
 player.CharacterAdded:Connect(clear)
 local function refresh()
  local power=player:GetAttribute('FlightPower') or 1
- stats.Text='↑ '..power..'   ● '..(player:GetAttribute('Coins') or 0)..'   ⬡ '..(player:GetAttribute('CollectionCount') or 0)
+ stats.Text='↑ '..power..'   ● '..(player:GetAttribute('Coins') or 0)..'   ⬡ '..(player:GetAttribute('CollectionCount') or 0)..' / '..(player:GetAttribute('BaseCapacity') or 5)
  local carrying=(player:GetAttribute('Carrying') or '')~=''
  carryingBadge.Visible=carrying
  drop.Visible=carrying
- fly.Text=if player:GetAttribute('Flying') then '■' else '↗'
+ landing.Visible=player:GetAttribute('Flying')==true
+ fly.BackgroundColor3=if landing.Visible then Color3.fromRGB(40,118,185) else Color3.fromRGB(42,158,109)
  local step=player:GetAttribute('TutorialStep') or 1
- progress.Text=if step<=5 then string.rep('● ',step)..string.rep('○ ',5-step) else ''
+ progress.Text=if step<=7 then string.rep('● ',step)..string.rep('○ ',7-step) else ''
 end
 local function guideTarget()
  local world=workspace:FindFirstChild('FlightForest')
  if not world then return nil,nil end
  local step=player:GetAttribute('TutorialStep') or 1
- if step==2 then
-  local ring=world:FindFirstChild('TrainingRing6')
+ if step==3 then
+  local ring=world:FindFirstChild('TrainingRing1')
   local marker=ring and ring:FindFirstChild('RingMarker')
   return if marker then marker.Position else nil,ring
- elseif step==1 then
-  return world:GetAttribute('TrainingPosition'),world:FindFirstChild('WindColumn')
+ elseif step==1 or step==2 then
+  return nil,nil
+
  elseif (player:GetAttribute('Carrying') or '')~='' then
   local plot=world:FindFirstChild('Collection_'..player.UserId)
-  return player:GetAttribute('BasePosition'),plot
- elseif step>=3 and step<=5 then
+  local full=player:GetAttribute('BaseFull')
+  local upgradePad=plot and plot:FindFirstChild('UpgradePad')
+  return if full and upgradePad then upgradePad.Position else player:GetAttribute('BasePosition'),if full and upgradePad then upgradePad else plot
+ elseif step>=4 and step<=7 then
   local root=player.Character and player.Character:FindFirstChild('HumanoidRootPart')
   local target,distance=nil,math.huge
   if root then
@@ -142,22 +182,46 @@ local function guideTarget()
  end
  return nil,nil
 end
-for _,name in {'FlightPower','Coins','Deliveries','Carrying','Training','Flying','TutorialStep','CollectionCount'} do
+for _,name in {'FlightPower','Coins','Deliveries','Carrying','Training','Flying','TutorialStep','CollectionCount','BaseCapacity','UpgradeCost','BaseFull'} do
  player:GetAttributeChangedSignal(name):Connect(refresh)
 end
 refresh()
 local sendTimer,hudTimer,wingPhase=0,0,0
 RunService.RenderStepped:Connect(function(dt)
- local learning=(player:GetAttribute('TutorialStep') or 1)<=2
- if learning then
-  local pulse=0.15+0.2*(1+math.sin(os.clock()*4))
-  fly.BackgroundTransparency=pulse
-  up.BackgroundTransparency=pulse
- else
-  fly.BackgroundTransparency=0
-  up.BackgroundTransparency=0
+ local step=player:GetAttribute('TutorialStep') or 1
+ local pulse=0.12+0.3*(1+math.sin(os.clock()*5))
+ fly.BackgroundTransparency=if step==1 then pulse else 0
+ up.BackgroundTransparency=if step==2 then pulse else 0
+ stealButton.BackgroundTransparency=if step==5 then pulse else 0
+ local rootNow=player.Character and player.Character:FindFirstChild('HumanoidRootPart')
+ local base=player:GetAttribute('BasePosition')
+ local cost=player:GetAttribute('UpgradeCost') or 0
+ upgrade.Visible=rootNow~=nil and base~=nil and (rootNow.Position-(base+Vector3.new(19,2,18))).Magnitude<18 and cost>0
+ upgrade.Text='+5 ● '..cost
+ upgrade.BackgroundTransparency=if player:GetAttribute('BaseFull') then pulse else 0
+ for _,feather in feathers do
+  feather.frame.Rotation=feather.side*(25+feather.index*9+(if player:GetAttribute('Flying') then math.sin(os.clock()*5)*12 else 0))
  end
  local position,target=guideTarget()
+ local nextPrompt=nil
+ if rootNow then
+  local world=workspace:FindFirstChild('FlightForest')
+  local nearest=12
+  if world then
+   for _,model in world:GetChildren() do
+    local main=model:IsA('Model') and model:FindFirstChild('MainBlock')
+    local prompt=main and main:FindFirstChildOfClass('ProximityPrompt')
+    if prompt and prompt.Enabled and (main.Position-rootNow.Position).Magnitude<nearest then
+     nearest=(main.Position-rootNow.Position).Magnitude; nextPrompt=prompt
+    end
+   end
+  end
+ end
+ if selectedPrompt~=nextPrompt then
+  if promptHolding and selectedPrompt then selectedPrompt:InputHoldEnd() end
+  promptHolding=false; selectedPrompt=nextPrompt
+ end
+ stealButton.Visible=selectedPrompt~=nil and (player:GetAttribute('Carrying') or '')==''
  outline.Adornee=target
  outline.OutlineTransparency=0.15+0.25*(1+math.sin(os.clock()*4))
  local camera=workspace.CurrentCamera

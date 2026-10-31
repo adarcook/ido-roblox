@@ -29,8 +29,8 @@ for i,zone in Rules.ZONES do
 end
 local step=1
 assert(Rules.nextTutorial(step,'deliver')==1, 'Tutorial skipped learning steps')
-for _,event in {'train','fly','steal','escape','deliver'} do step=Rules.nextTutorial(step,event) end
-assert(step==6 and Rules.nextTutorial(6,'train')==6, 'Completed tutorial restarted')
+for _,event in {'toggle','fly','train','approach','steal','escape','deliver'} do step=Rules.nextTutorial(step,event) end
+assert(step==8 and Rules.nextTutorial(8,'train')==8, 'Completed tutorial restarted')
 local earned=table.create(12,0); earned[2]=1; earned[12]=3
 local first=Rules.collectionMerge({},earned,{})
 assert(first[2]==1 and first[12]==3 and first[1]==0,'Lost collectible color or biome')
@@ -42,3 +42,19 @@ assert(nextSave[2]==2 and nextSave[12]==3,'Incremental save lost collection')
 local concurrent=Rules.collectionMerge(nextSave,{1},{})
 assert(concurrent[1]==1 and concurrent[2]==2,'Concurrent session overwrote collection')
 print('v7 rules passed: free altitude/theft, speed, 12 collectibles, cross-border pursuit and territorial reclaim, tutorial and idempotent collection saves')
+
+assert(Rules.capacity(0)==5 and Rules.capacity(7)==40)
+assert(Rules.upgradeCost(0)==100 and Rules.upgradeCost(1)==200 and Rules.upgradeCost(7)==nil)
+assert(Rules.canStore({4},0) and not Rules.canStore({5},0))
+assert(Rules.canStore({5},1))
+assert(Rules.migrateLevel(0,{11})==2)
+assert(Rules.nextTutorial(1,'fly')==1 and Rules.nextTutorial(5,'deliver')==5)
+print('v8 capacity, prices, legacy collection migration and action-gated tutorial passed')
+
+local original={coins=125,baseLevel=0,collection={5}}
+local purchase=Rules.purchaseBase(original,0)
+assert(purchase.coins==25 and purchase.baseLevel==1 and original.coins==125)
+assert(Rules.purchaseBase(purchase,0)==nil,'Duplicate or concurrent purchase charged twice')
+assert(Rules.purchaseBase(purchase,1)==nil,'Insufficient funds accepted')
+assert(Rules.purchaseBase({coins=100000,baseLevel=7},7)==nil,'Purchased beyond maximum')
+print('Atomic upgrade rules: exact debit, no input mutation, stale level, insufficient funds and maximum checked')

@@ -69,6 +69,8 @@ end
 local function update(player)
  local s = states[player]
  if not s then return end
+ player:SetAttribute('BaseCapacity',Rules.capacity(s.baseLevel))
+ player:SetAttribute('UpgradeCost',Rules.upgradeCost(s.baseLevel) or 0)
  player:SetAttribute('FlightPower',s.power)
  player:SetAttribute('Coins',s.coins)
  player:SetAttribute('Deliveries',s.deliveries)
@@ -95,11 +97,11 @@ local function gain(player, power, coins, deliveries)
 end
 local function save(player)
  local s = states[player]
- if not s or not s.loaded or not s.canSave or s.saving then return end
+ if not s or not s.loaded or not s.canSave or s.saving then return false end
  s.saving = true
  local totals = table.clone(s.earned)
  local collection=table.clone(s.collectionEarned)
- local tutorialDone=s.tutorial>5
+ local tutorialDone=s.tutorial>7
  local ok = pcall(function()
   store:UpdateAsync('player_'..player.UserId,function(old)
    old = if type(old)=='table' then old else {}
@@ -119,9 +121,11 @@ local function save(player)
    return old
   end)
  end)
+ if ok then s.savedCoins=totals.coins end
  s.saving = false
  if player.Parent then player:SetAttribute('SaveStatus',if ok then 'Saved' else 'Save retry pending') end
  if not ok then warn('Flight progress save deferred for user',player.UserId) end
+ return ok
 end
 
 -- A base large enough for the tablet player to land without precision aiming.
@@ -212,6 +216,8 @@ local function steal(player,tree)
  if not s or not s.loaded or not root then return end
  local distance=(root.Position-tree.block.MainBlock.Position).Magnitude
  if not Rules.canSteal(s.power,1,s.carry~=nil,tree.owner==nil and tree.available,distance) then return end
+ if s.tutorial<4 then return end
+ if distance<=12 then tutorial(player,'approach') end
  tree.available,tree.owner,tree.wakeAt=false,player,os.clock()+2.5
  tree.droppedAt=nil
  tree.guardian.alerts[tree]=true
@@ -352,9 +358,9 @@ local function renderCollection(player)
   plotSlots[slot]=player
   s.plotSlot=slot
   local row=math.floor((slot-1)/2)
-  s.base=origin+Vector3.new(if slot%2==1 then -55 else 55,4,-85-row*60)
+  s.base=origin+Vector3.new(if slot%2==1 then -55 else 55,4,-105-row*100)
   s.plot=Instance.new('Model'); s.plot.Name='Collection_'..player.UserId; s.plot.Parent=world
-  local platform=part('PersonalBase',Vector3.new(48,2,48),CFrame.new(s.base),Color3.fromRGB(47,135,126),Enum.Material.WoodPlanks,s.plot)
+  local platform=part('PersonalBase',Vector3.new(48,2,86),CFrame.new(s.base),Color3.fromRGB(47,135,126),Enum.Material.WoodPlanks,s.plot)
   local beacon=part('PersonalBeacon',Vector3.new(1,45,1),CFrame.new(s.base+Vector3.new(0,23,18)),Color3.fromRGB(100,255,195),Enum.Material.Neon,s.plot)
   beacon.CanCollide=false; beacon.Transparency=0.5
   player:SetAttribute('BasePosition',s.base)
@@ -362,23 +368,62 @@ local function renderCollection(player)
  end
  if s.display then s.display:Destroy() end
  s.display=Instance.new('Model'); s.display.Name='CollectedBlocks'; s.display.Parent=s.plot
- local total=0
- for kind,count in s.collection do
-  total+=count
-  for n=1,math.min(count,6) do
+ local total=Rules.collectionCount(s.collection)
+ local capacity=math.max(Rules.capacity(s.baseLevel),total)
+ local kinds={}
+ for kind,count in s.collection do for _=1,count do table.insert(kinds,kind) end end
+ for slot=1,capacity do
+  local position=s.base+Vector3.new(((slot-1)%5-2)*8,2,math.floor((slot-1)/5)*8-18)
+  local occupied=kinds[slot]~=nil
+  local socket=part('Slot'..slot,Vector3.new(7,0.5,7),CFrame.new(position),if occupied then Color3.fromRGB(100,255,170) else Color3.fromRGB(65,90,95),Enum.Material.Neon,s.display)
+  socket.CanCollide=false
+  if occupied then
    local block=template:Clone()
    for _,obj in block:GetDescendants() do
     if obj:IsA('BaseScript') or obj:IsA('ProximityPrompt') then obj:Destroy()
     elseif obj:IsA('BasePart') then obj.Anchored=true; obj.CanCollide=false end
    end
    block.PrimaryPart=block.MainBlock
-   block.MainBlock.Color=Color3.fromRGB(table.unpack(Rules.COLLECTIBLES[kind].color))
+   block.MainBlock.Color=Color3.fromRGB(table.unpack(Rules.COLLECTIBLES[kinds[slot]].color))
    block.Parent=s.display
-   block:PivotTo(CFrame.new(s.base+Vector3.new((((kind-1)%4)-1.5)*10,5+math.floor((n-1)/2)*7,math.floor((kind-1)/4)*12-15+(if n%2==1 then 0 else 5))))
-   if n==1 then label(block.MainBlock,'⬡ ×'..count,Color3.new(1,1,1),85) end
+   block:PivotTo(CFrame.new(position+Vector3.new(0,4,0)))
   end
  end
+ if not s.upgradePad then
+  s.upgradePad=part('UpgradePad',Vector3.new(8,1,8),CFrame.new(s.base+Vector3.new(19,2,18)),Color3.fromRGB(255,195,65),Enum.Material.Neon,s.plot)
+  s.slotLabel=label(s.upgradePad,'',Color3.new(1,1,1),100)
+ end
+ s.slotLabel.Text='⬡ '..total..' / '..capacity..'   +5 ● '..(Rules.upgradeCost(s.baseLevel) or '✓')
+ player:SetAttribute('BaseFull',total>=capacity)
  player:SetAttribute('CollectionCount',total)
+end
+local function upgrade(player)
+ local s=states[player]
+ local root=rootOf(player)
+ if not s or not s.loaded or not s.canSave or s.upgrading or s.saving or not root or not s.base or (root.Position-(s.base+Vector3.new(19,2,18))).Magnitude>18 then return end
+ local cost=Rules.upgradeCost(s.baseLevel)
+ if not cost or s.coins<cost then return end
+ s.upgrading=true
+ if not save(player) then s.upgrading=false; return end
+ s.saving=true
+ local earnedBefore=s.savedCoins or 0
+ local expected=s.baseLevel
+ local purchased=false
+ local ok,data=pcall(function()
+  return store:UpdateAsync('player_'..player.UserId,function(old)
+   purchased=false
+   if type(old)~='table' then return nil end
+   local result=Rules.purchaseBase(old,expected)
+   purchased=result~=nil
+   return result
+  end)
+ end)
+ s.saving=false; s.upgrading=false
+ if ok and purchased and data then
+  s.baseLevel=data.baseLevel
+  s.coins=data.coins+s.earned.coins-earnedBefore
+  renderCollection(player); update(player)
+ end
 end
 local function drop(player)
  local s=states[player]
@@ -440,7 +485,7 @@ local function flight(player,enabled)
  if not s or not root then return end
  local h=player.Character:FindFirstChildOfClass('Humanoid')
  s.flying=enabled
- if enabled then tutorial(player,'fly') end
+ if enabled then tutorial(player,'toggle'); s.takeoffPosition=root.Position end
  s.direction=Vector3.zero
  s.inputTime=os.clock()
  h.AutoRotate=not enabled
@@ -496,7 +541,7 @@ local function characterAdded(player,character)
  end)
 end
 local function joined(player)
- local s={tutorial=1,collection=table.create(#Rules.COLLECTIBLES,0),collectionEarned=table.create(#Rules.COLLECTIBLES,0),power=1,coins=0,deliveries=0,earned={power=0,coins=0,deliveries=0},loaded=false,canSave=false,session=HttpService:GenerateGUID(false),direction=Vector3.zero,flying=false,training=0,lastToggle=0,lastAction=0}
+ local s={baseLevel=0,tutorial=1,collection=table.create(#Rules.COLLECTIBLES,0),collectionEarned=table.create(#Rules.COLLECTIBLES,0),power=1,coins=0,deliveries=0,earned={power=0,coins=0,deliveries=0},loaded=false,canSave=false,session=HttpService:GenerateGUID(false),direction=Vector3.zero,flying=false,training=0,lastToggle=0,lastAction=0}
  states[player]=s
  player.RespawnLocation=spawn
  player:SetAttribute('SaveStatus','Loading')
@@ -513,10 +558,11 @@ local function joined(player)
   end
   if states[player]~=s then return end
   if ok and type(data)=='table' then
-   s.tutorial=if data.tutorialDone==true then 6 else 1
+   s.tutorial=if data.tutorialDone==true then 8 else 1
    if type(data.collection)=='table' then
     for i=1,#Rules.COLLECTIBLES do s.collection[i]=math.max(0,math.floor(tonumber(data.collection[i]) or 0)) end
    end
+   s.baseLevel=Rules.migrateLevel(data.baseLevel,s.collection)
    s.power=math.clamp(tonumber(data.power) or 1,1,Rules.MAX_POWER)
    s.coins=math.max(0,tonumber(data.coins) or 0)
    s.deliveries=math.max(0,tonumber(data.deliveries) or 0)
@@ -552,6 +598,8 @@ remote.OnServerEvent:Connect(function(player,action,direction)
   for _,v in {direction.X,direction.Y,direction.Z} do if v~=v or math.abs(v)>10 then return end end
   s.direction=if direction.Magnitude>1 then direction.Unit else direction
   s.inputTime=now
+ elseif action=='upgrade' then
+  upgrade(player)
  elseif action=='drop' then
   drop(player)
  elseif action=='toggle' and now-s.lastToggle>0.5 and now>=(s.knockUntil or 0) then
@@ -599,9 +647,14 @@ RunService.Heartbeat:Connect(function(dt)
      tell(player,'Great flying! Ring bonus: +3 Flight Power')
     end
    end
-   if s.tutorial==2 and s.flying and (root.Position-trainingPosition).Magnitude>30 then tutorial(player,'fly') end
+   if s.tutorial==2 and s.flying and s.takeoffPosition and root.Position.Y>s.takeoffPosition.Y+3 then tutorial(player,'fly') end
+   if s.tutorial==4 then
+    for _,tree in trees do
+     if tree.available and (root.Position-tree.block.MainBlock.Position).Magnitude<=12 then tutorial(player,'approach'); break end
+    end
+   end
    if s.carry and not Rules.inZone(s.carry.guardian.zone,root.Position.X-origin.X,root.Position.Z-origin.Z) then tutorial(player,'escape') end
-   if s.carry and s.base and (root.Position-s.base).Magnitude<26 then
+   if s.carry and s.base and (root.Position-s.base).Magnitude<26 and Rules.canStore(s.collection,s.baseLevel) then
     local tree=s.carry
     local oldTier=Rules.tier(s.deliveries)
     s.collection[tree.kind]+=1
@@ -686,4 +739,4 @@ game:BindToClose(function()
   if not saving then break end
  until os.clock()>deadline
 end)
-print('v7 Visual Flight ready')
+print('v8 Wings & Base ready')

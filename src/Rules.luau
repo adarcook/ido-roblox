@@ -1,5 +1,5 @@
 local Rules = {}
-Rules.VERSION = 'v7 - Visual Flight'
+Rules.VERSION = 'v8 - Wings & Base'
 Rules.MAX_POWER = 200
 Rules.ZONES = {
  {name='Grass', start=80, finish=250, color={92,180,95}, material='Grass'},
@@ -32,7 +32,7 @@ function Rules.guardianCanReclaim(zone, x, z)
  return Rules.inZone(zone,x,z)
 end
 function Rules.nextTutorial(step, event)
- local events={'train','fly','steal','escape','deliver'}
+ local events={'toggle','fly','train','approach','steal','escape','deliver'}
  return if events[step]==event then step+1 else step
 end
 function Rules.collectionMerge(old, earned, applied)
@@ -40,6 +40,33 @@ function Rules.collectionMerge(old, earned, applied)
  for i=1,#Rules.COLLECTIBLES do
   result[i]=math.max(0,tonumber(old[i]) or 0)+math.max(0,(earned[i] or 0)-(applied[i] or 0))
  end
+ return result
+end
+Rules.MAX_BASE_LEVEL=7
+function Rules.capacity(level)
+ return 5*(1+math.clamp(math.floor(level),0,Rules.MAX_BASE_LEVEL))
+end
+function Rules.upgradeCost(level)
+ return if level<Rules.MAX_BASE_LEVEL then 100*2^level else nil
+end
+function Rules.collectionCount(collection)
+ local total=0
+ for _,count in collection do total+=count end
+ return total
+end
+function Rules.canStore(collection,level)
+ return Rules.collectionCount(collection)<Rules.capacity(level)
+end
+function Rules.migrateLevel(level,collection)
+ return math.max(math.clamp(math.floor(tonumber(level) or 0),0,Rules.MAX_BASE_LEVEL),math.ceil(Rules.collectionCount(collection)/5)-1,0)
+end
+function Rules.purchaseBase(old,expected)
+ local level=Rules.migrateLevel(old.baseLevel,old.collection or {})
+ local cost=Rules.upgradeCost(level)
+ if level~=expected or not cost or (tonumber(old.coins) or 0)<cost then return nil end
+ local result=table.clone(old)
+ result.coins=old.coins-cost
+ result.baseLevel=level+1
  return result
 end
 function Rules.tier(deliveries)
