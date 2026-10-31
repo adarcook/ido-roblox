@@ -1,5 +1,5 @@
 local Rules = {}
-Rules.VERSION = 'v6 - Ido Feedback Pass'
+Rules.VERSION = 'v7 - Visual Flight'
 Rules.MAX_POWER = 200
 Rules.ZONES = {
  {name='Grass', start=80, finish=250, color={92,180,95}, material='Grass'},
@@ -8,10 +8,10 @@ Rules.ZONES = {
  {name='Twilight', start=590, finish=760, color={145,111,195}, material='Slate'},
 }
 Rules.TREES = {
- {name='Meadow Griffin', height=30, x=0, z=160, required=1, coins=25, power=4, rarity='COMMON', speed=27, color={104,208,117}},
- {name='Snow Owl', height=62, x=0, z=330, required=1, coins=65, power=6, rarity='RARE', speed=30, color={87,175,255}},
+ {name='Meadow Seagull', height=30, x=0, z=160, required=1, coins=25, power=4, rarity='COMMON', speed=27, color={104,208,117}},
+ {name='Crystal Ice Ray', height=62, x=0, z=330, required=1, coins=65, power=6, rarity='RARE', speed=30, color={87,175,255}},
  {name='Sand Drake', height=95, x=0, z=500, required=1, coins=140, power=9, rarity='EPIC', speed=32, color={244,172,70}},
- {name='Twilight Phoenix', height=135, x=0, z=670, required=1, coins=300, power=12, rarity='LEGENDARY', speed=34, color={190,115,255}},
+ {name='Clockwork Pterosaur', height=135, x=0, z=670, required=1, coins=300, power=12, rarity='LEGENDARY', speed=34, color={190,115,255}},
 }
 Rules.COLLECTIBLES={}
 for zone,config in Rules.TREES do
@@ -25,8 +25,11 @@ end
 function Rules.inZone(zone, x, z)
  return x > -90 and x < 90 and z >= zone.start and z < zone.finish
 end
-function Rules.guardianCanCatch(zone, thiefX, thiefZ, guardX, guardZ, distance)
- return Rules.inZone(zone,thiefX,thiefZ) and Rules.inZone(zone,guardX,guardZ) and distance < 7
+function Rules.guardianCanCatch(_zone, _thiefX, _thiefZ, _guardX, _guardZ, distance)
+ return distance < 7
+end
+function Rules.guardianCanReclaim(zone, x, z)
+ return Rules.inZone(zone,x,z)
 end
 function Rules.nextTutorial(step, event)
  local events={'train','fly','steal','escape','deliver'}

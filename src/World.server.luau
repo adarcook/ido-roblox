@@ -147,14 +147,20 @@ for i,zone in Rules.ZONES do
  end
  local sign=part(zone.name..'Sign',Vector3.new(20,2,2),CFrame.new(origin+Vector3.new(0,5,zone.start)),color,Enum.Material.Neon)
  sign.CanCollide=false
- label(sign,zone.name..' | Guardian stays in this biome',color,220)
+ label(sign,'◆ '..i,color,110)
 end
 part('HomeMeadow',Vector3.new(180,2,160),CFrame.new(origin),Color3.fromRGB(83,147,86),Enum.Material.Grass)
+for x=-2,2 do
+ for z=-2,2 do
+  part('OuterLandingGround',Vector3.new(1024,4,1024),CFrame.new(origin+Vector3.new(x*1024,-5,z*1024)),Color3.fromRGB(65,100,80),Enum.Material.Grass)
+ end
+end
 
 -- Wooden wind trainer, moving blades and ascending rings.
 local trainingPosition = origin+Vector3.new(-38,0,-32)
 local deck = part('WindTrainingDeck',Vector3.new(26,2,26),CFrame.new(trainingPosition+Vector3.new(0,2,0)),Color3.fromRGB(153,106,61))
-label(deck,'WIND TRAINING\nHover in the blue wind: +1 Power / 2 sec',Color3.fromRGB(166,226,255))
+label(deck,'↑ ↑ ↑',Color3.fromRGB(166,226,255))
+world:SetAttribute('TrainingPosition',trainingPosition+Vector3.new(0,20,0))
 local wind = part('WindColumn',Vector3.new(18,34,18),CFrame.new(trainingPosition+Vector3.new(0,20,0)),Color3.fromRGB(125,224,255),Enum.Material.Neon)
 wind.Transparency,wind.CanCollide = 0.85,false
 local particles = Instance.new('ParticleEmitter')
@@ -186,7 +192,7 @@ for i=1,6 do
  end
  local marker=part('RingMarker',Vector3.one,CFrame.new(pos+Vector3.new(0,9,0)),Color3.new(1,1,1),nil,folder)
  marker.Transparency,marker.CanCollide=1,false
- label(marker,'RING '..i..'  +3 POWER',Color3.fromRGB(255,224,127),100)
+ label(marker,'◎ +3',Color3.fromRGB(255,224,127),100)
  table.insert(rings,{position=pos,cooldowns={}})
 end
 
@@ -227,7 +233,7 @@ local function steal(player,tree)
   local ok,track=pcall(function() return animator:LoadAnimation(animation) end)
   if ok then s.track=track; track.Looped=true; track.Priority=Enum.AnimationPriority.Action; track:Play() end
  end
- tree.guardian.status.Text='WAKING UP!\nEscape this biome!'
+ tree.guardian.status.Text='! ! !'
  local highlight=Instance.new('Highlight')
  highlight.Name='CarryHighlight'
  highlight.FillColor=Color3.fromRGB(255,225,70)
@@ -251,8 +257,8 @@ local function makeBlock(tree)
  local prompt=main:FindFirstChildOfClass('ProximityPrompt')
  if not prompt then prompt=Instance.new('ProximityPrompt'); prompt.Parent=main end
  main.Color=Color3.fromRGB(table.unpack(tree.config.color))
- prompt.ActionText='Steal Lucky Block'
- prompt.ObjectText=tree.config.rarity..' | '..tree.guardian.zone.name
+ prompt.ActionText='⬡'
+ prompt.ObjectText=''
  prompt.MaxActivationDistance,prompt.HoldDuration,prompt.RequiresLineOfSight=12,0.6,false
  prompt.Triggered:Connect(function(player) steal(player,tree) end)
  tree.block,tree.prompt=block,prompt
@@ -283,21 +289,44 @@ for index,config in Rules.TREES do
  monster.PrimaryPart=body
  local head=part('Head',Vector3.new(5,5,5),home*CFrame.new(0,3,-5),color,Enum.Material.SmoothPlastic,monster)
  head.Shape=Enum.PartType.Ball
- part('Beak',Vector3.new(2,1.5,4),home*CFrame.new(0,2,-8),Color3.fromRGB(255,194,65),Enum.Material.SmoothPlastic,monster)
+ if index==1 then part('Beak',Vector3.new(2,1.5,4),home*CFrame.new(0,2,-8),Color3.fromRGB(255,194,65),Enum.Material.SmoothPlastic,monster) end
  part('Tail',Vector3.new(3,1,9),home*CFrame.new(0,0,8)*CFrame.Angles(-0.3,0,0),color,Enum.Material.SmoothPlastic,monster)
+ if index==2 then
+  body.Material=Enum.Material.Ice
+  body.Size=Vector3.new(10,2,8)
+  for spike=1,5 do
+   part('CrystalSpine',Vector3.new(1,3+spike,1),home*CFrame.new(0,3,spike-3)*CFrame.Angles(0,0,0.5),Color3.fromRGB(145,245,255),Enum.Material.Ice,monster)
+  end
+ elseif index==3 then
+  body.Size=Vector3.new(6,6,15)
+  for _,side in {-1,1} do
+   part('DragonHorn',Vector3.new(1,5,1),home*CFrame.new(side*2,6,-4)*CFrame.Angles(0,0,-side*0.4),Color3.fromRGB(255,220,145),Enum.Material.Slate,monster)
+  end
+  for spike=1,6 do
+   part('DragonSpine',Vector3.new(1,3,2),home*CFrame.new(0,4,spike*2-5),Color3.fromRGB(190,70,35),Enum.Material.Slate,monster)
+  end
+ elseif index==4 then
+  body.Material=Enum.Material.DiamondPlate
+  head.Size=Vector3.new(3,4,10)
+  part('PterosaurCrest',Vector3.new(1,6,8),home*CFrame.new(0,6,-2)*CFrame.Angles(0.4,0,0),color,Enum.Material.Metal,monster)
+  for _,side in {-1,1} do
+   part('Engine',Vector3.new(3,3,6),home*CFrame.new(side*4,0,3),Color3.fromRGB(70,80,95),Enum.Material.Metal,monster)
+   part('EngineGlow',Vector3.new(2,2,1),home*CFrame.new(side*4,0,6),Color3.fromRGB(70,255,240),Enum.Material.Neon,monster)
+  end
+ end
  local wings={}
  for _,side in {-1,1} do
   local eye=part('Eye',Vector3.new(0.6,1.2,1),home*CFrame.new(side*2.4,3,-6),Color3.fromRGB(20,30,45),Enum.Material.Neon,monster)
-  part('Talons',Vector3.new(1.5,2,3),home*CFrame.new(side*2,-3,-1),Color3.fromRGB(255,194,65),Enum.Material.SmoothPlastic,monster)
+  if index~=2 then part('Talons',Vector3.new(1.5,2,3),home*CFrame.new(side*2,-3,-1),Color3.fromRGB(255,194,65),Enum.Material.SmoothPlastic,monster) end
   for feather=1,5 do
    local relative=CFrame.new(side*(4+feather*1.3),1,feather*0.7)*CFrame.Angles(0,side*0.15,side*0.2)
-   local wing=part('CreatureFeather',Vector3.new(2,0.7,9-feather*0.6),home*relative,color:Lerp(Color3.new(1,1,1),feather*0.1),Enum.Material.SmoothPlastic,monster)
+   local wing=part(if index==1 then 'CreatureFeather' else 'WingMembrane',Vector3.new(if index==1 then 2 else 3,0.7,9-feather*0.6),home*relative,color:Lerp(Color3.new(1,1,1),feather*0.1),if index==2 then Enum.Material.Ice elseif index==4 then Enum.Material.Metal else Enum.Material.SmoothPlastic,monster)
    table.insert(wings,{part=wing,relative=relative,side=side})
   end
  end
  for _,obj in monster:GetChildren() do if obj:IsA('BasePart') then obj.CanCollide=false end end
  local guardian={model=monster,home=home,zone=zone,config=config,alerts={},wings=wings}
- guardian.status=label(body,'Zzz... '..config.name,color,150)
+ guardian.status=label(body,'Zzz',color,100)
  table.insert(guardians,guardian)
  -- Three independently stealable blocks share one territorial guardian.
  for slot=1,3 do
@@ -329,7 +358,7 @@ local function renderCollection(player)
   local beacon=part('PersonalBeacon',Vector3.new(1,45,1),CFrame.new(s.base+Vector3.new(0,23,18)),Color3.fromRGB(100,255,195),Enum.Material.Neon,s.plot)
   beacon.CanCollide=false; beacon.Transparency=0.5
   player:SetAttribute('BasePosition',s.base)
-  label(platform,player.DisplayName.."'s Lucky Block Base",Color3.new(1,1,1),160)
+  label(platform,'⌂ '..player.DisplayName,Color3.new(1,1,1),160)
  end
  if s.display then s.display:Destroy() end
  s.display=Instance.new('Model'); s.display.Name='CollectedBlocks'; s.display.Parent=s.plot
@@ -346,7 +375,7 @@ local function renderCollection(player)
    block.MainBlock.Color=Color3.fromRGB(table.unpack(Rules.COLLECTIBLES[kind].color))
    block.Parent=s.display
    block:PivotTo(CFrame.new(s.base+Vector3.new((((kind-1)%4)-1.5)*10,5+math.floor((n-1)/2)*7,math.floor((kind-1)/4)*12-15+(if n%2==1 then 0 else 5))))
-   if n==1 then label(block.MainBlock,Rules.COLLECTIBLES[kind].rarity..' x'..count,Color3.new(1,1,1),85) end
+   if n==1 then label(block.MainBlock,'⬡ ×'..count,Color3.new(1,1,1),85) end
   end
  end
  player:SetAttribute('CollectionCount',total)
@@ -361,12 +390,17 @@ local function drop(player)
  tree.guardian.alerts[tree]=nil
  local highlight=tree.block:FindFirstChild('CarryHighlight')
  if highlight then highlight:Destroy() end
- -- A floating resting block remains visible and reachable even when dropped in midair.
- tree.block.MainBlock.Anchored=true
+ -- A server-owned physical assembly falls under gravity.
+ local main=tree.block.MainBlock
+ main.Anchored=false
+ main.CanCollide=true
+ main.Massless=false
  tree.block:PivotTo(CFrame.new(root.Position+root.CFrame.LookVector*7))
+ main:SetNetworkOwner(nil)
+ main.AssemblyLinearVelocity=root.AssemblyLinearVelocity+root.CFrame.LookVector*8
  tree.available=true
  tree.droppedAt=os.clock()
- tree.prompt.ActionText='Pick Up Lucky Block'
+ tree.prompt.ActionText='⬡'
  tree.prompt.Enabled=true
  tell(player,'Block left here! Pick it up later (returns to its biome after 10 minutes).')
 end
@@ -520,16 +554,10 @@ remote.OnServerEvent:Connect(function(player,action,direction)
   s.inputTime=now
  elseif action=='drop' then
   drop(player)
- elseif action=='toggle' and now-s.lastToggle>0.5 then
+ elseif action=='toggle' and now-s.lastToggle>0.5 and now>=(s.knockUntil or 0) then
   s.lastToggle=now
   flight(player,not s.flying)
- elseif action=='home' and now-s.lastToggle>1 then
-  s.lastToggle=now
-  if s.carry then drop(player) end
-  flight(player,false)
-  player.Character:PivotTo(CFrame.new((s.base or basePosition)+Vector3.new(0,6,9)))
-  root.AssemblyLinearVelocity=Vector3.zero
-  tell(player,'Back home. Fly to the wooden wind trainer to grow stronger!')
+
  end
 end)
 
@@ -605,31 +633,32 @@ RunService.Heartbeat:Connect(function(dt)
   local current=guardian.model:GetPivot().Position
   for tree in guardian.alerts do
    local root=tree.owner and rootOf(tree.owner)
-   if root and now>=tree.wakeAt and Rules.inZone(guardian.zone,root.Position.X-origin.X,root.Position.Z-origin.Z) then
+   if root and now>=tree.wakeAt then
     local distance=(root.Position-current).Magnitude
     if distance<nearest then target={tree=tree,root=root}; nearest=distance end
    end
   end
   if target then
-   guardian.status.Text='AWAKE! Escape the '..guardian.zone.name..' biome!'
+   guardian.status.Text='!'
    local root=target.root
    if Rules.guardianCanCatch(guardian.zone,root.Position.X-origin.X,root.Position.Z-origin.Z,current.X-origin.X,current.Z-origin.Z,nearest) then
     local player=target.tree.owner
-    resetTree(target.tree,4)
-    flight(player,false)
-    player.Character:PivotTo(CFrame.new((states[player].base or basePosition)+Vector3.new(0,6,9)))
-    root.AssemblyLinearVelocity=Vector3.zero
-    tell(player,'Caught! Block returned. Your collection is safe. Train for more speed!')
+    local state=states[player]
+    if now>=(state.knockUntil or 0) then
+     state.knockUntil=now+2
+     if Rules.guardianCanReclaim(guardian.zone,root.Position.X-origin.X,root.Position.Z-origin.Z) then resetTree(target.tree,4) end
+     flight(player,false)
+     root.AssemblyLinearVelocity=Vector3.new(0,-65,0)
+    end
    else
     local delta=root.Position-current
     if delta.Magnitude>0.01 then
      local pos=current+delta.Unit*math.min(delta.Magnitude,guardian.config.speed*math.min(dt,0.1))
-     pos=Vector3.new(math.clamp(pos.X,origin.X-89,origin.X+89),pos.Y,math.clamp(pos.Z,origin.Z+guardian.zone.start+0.1,origin.Z+guardian.zone.finish-0.1))
      guardian.model:PivotTo(CFrame.lookAt(pos,root.Position))
     end
    end
   else
-   guardian.status.Text='Zzz... '..guardian.config.name
+   guardian.status.Text='Zzz'
    guardian.model:PivotTo(guardian.model:GetPivot():Lerp(guardian.home,math.min(1,dt*3)))
   end
   local cf=guardian.model:GetPivot()
@@ -657,4 +686,4 @@ game:BindToClose(function()
   if not saving then break end
  until os.clock()>deadline
 end)
-print('v6 Ido Feedback Pass ready: four biomes, twelve blocks, personal collections')
+print('v7 Visual Flight ready')
