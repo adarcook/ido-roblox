@@ -123,10 +123,10 @@ local function guideTarget()
   return if marker then marker.Position else nil,ring
  elseif step==1 then
   return world:GetAttribute('TrainingPosition'),world:FindFirstChild('WindColumn')
- elseif (player:GetAttribute('Carrying') or '')~='' or step==5 then
+ elseif (player:GetAttribute('Carrying') or '')~='' then
   local plot=world:FindFirstChild('Collection_'..player.UserId)
   return player:GetAttribute('BasePosition'),plot
- elseif step==3 or step==4 then
+ elseif step>=3 and step<=5 then
   local root=player.Character and player.Character:FindFirstChild('HumanoidRootPart')
   local target,distance=nil,math.huge
   if root then
@@ -148,6 +148,15 @@ end
 refresh()
 local sendTimer,hudTimer,wingPhase=0,0,0
 RunService.RenderStepped:Connect(function(dt)
+ local learning=(player:GetAttribute('TutorialStep') or 1)<=2
+ if learning then
+  local pulse=0.15+0.2*(1+math.sin(os.clock()*4))
+  fly.BackgroundTransparency=pulse
+  up.BackgroundTransparency=pulse
+ else
+  fly.BackgroundTransparency=0
+  up.BackgroundTransparency=0
+ end
  local position,target=guideTarget()
  outline.Adornee=target
  outline.OutlineTransparency=0.15+0.25*(1+math.sin(os.clock()*4))
